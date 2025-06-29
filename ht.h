@@ -4,11 +4,39 @@
 #include <stdbool.h>
 #include <stddef.h>
 
-// Hash table structure: create with ht_create, free with ht_destroy.
-typedef struct ht ht;
+/* 
+ * Hash table entry (slot may be filled or empty).
+ *	- key is NULL if this slot is empty
+ */
+typedef struct {
+    const char* key;  
+    void* value;
+} ht_entry;
 
-// Create hash table and return pointer to it, or NULL if out of memory.
-ht* ht_create(void);
+// Hash table structure: create with ht_create, free with ht_destroy.
+typedef struct {
+    ht_entry* entries;  // hash slots
+    size_t capacity;    // size of _entries array
+    size_t length;      // number of items in hash table
+    void (*destroy)(void *data); // destroy cb individual value
+} ht;
+
+/* 
+ * Iterator for hash table
+ */
+typedef struct {
+    const char* key;  // current key
+    void* value;      // current value
+    const ht* _table; // reference to hash table being iterated
+    size_t _index;    // current index into ht._entries
+} hti;
+
+/*
+ * Initialized a hash table
+ *  - capacity: initial avaible address spaces in the table
+ *  - destroy: function will be called to clean up
+ */
+ht* ht_init(int capacity, void (*destroy)(void *data));
 
 // Free memory allocated for hash table, including allocated keys.
 void ht_destroy(ht* table);
@@ -26,16 +54,6 @@ const char* ht_set(ht* table, const char* key, void* value);
 // Return number of items in hash table.
 size_t ht_length(ht* table);
 
-// Hash table iterator: create with ht_iterator, iterate with ht_next.
-typedef struct {
-    const char* key;  // current key
-    void* value;      // current value
-
-    // Don't use these fields directly.
-    ht* _table;       // reference to hash table being iterated
-    size_t _index;    // current index into ht._entries
-} hti;
-
 // Return new hash table iterator (for use with ht_next).
 hti ht_iterator(ht* table);
 
@@ -43,5 +61,7 @@ hti ht_iterator(ht* table);
 // and value to current item, and return true. If there are no more
 // items, return false. Don't call ht_set during iteration.
 bool ht_next(hti* it);
+
+void ht_print(ht *m, char* (*ts)(void *data));
 
 #endif // _HT_H

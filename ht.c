@@ -2,34 +2,20 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include "ht.h"
 
 #define FNV_OFFSET 14695981039346656037UL
 #define FNV_PRIME 1099511628211UL
-#define INITIAL_CAPACITY 16  // must not be zero
 
-// Hash table entry (slot may be filled or empty).
-typedef struct {
-    const char* key;  // key is NULL if this slot is empty
-    void* value;
-} ht_entry;
-
-// Hash table structure: create with ht_create, free with ht_destroy.
-struct ht {
-    ht_entry* entries;  // hash slots
-    size_t capacity;    // size of _entries array
-    size_t length;      // number of items in hash table
-};
-
-
-ht* ht_create(void) {
-    // Allocate space for hash table struct.
+ht* ht_init(int capacity, void (*destroy)(void *data)) {
     ht* table = malloc(sizeof(ht));
     if (table == NULL) {
         return NULL;
     }
     table->length = 0;
-    table->capacity = INITIAL_CAPACITY;
+    table->capacity = capacity;
+    table->destroy = destroy;
 
     // Allocate (zero'd) space for entry buckets.
     table->entries = calloc(table->capacity, sizeof(ht_entry));
@@ -41,14 +27,21 @@ ht* ht_create(void) {
 }
 
 void ht_destroy(ht* table) {
-    // First free allocated keys.
     for (size_t i = 0; i < table->capacity; i++) {
         free((void*)table->entries[i].key);
+        table->entries[i].key = NULL;
+        if (table->destroy != NULL) {
+            table->destroy(table->entries[i].value);
+            table->entries[i].value = NULL;
+        }
     }
 
     // Then free entries array and table itself.
+    table->length = 0;
     free(table->entries);
+    table->entries = NULL;
     free(table);
+    table = NULL;
 }
 
 // Interal hash function, return 64-bit FNV-1a hash for key (NUL-terminated).
@@ -83,7 +76,7 @@ void* ht_get(ht* table, const char* key) {
 }
 
 // Internal function to set an entry (without expanding table).
-static const char* ht_set_entry(ht_entry* entries, size_t capacity,
+static const char* _ht_set(ht* table, ht_entry* entries, size_t capacity,
         const char* key, void* value, size_t* plength) {
     // AND hash with capacity-1 to ensure it's within entries array.
     uint64_t hash = hash_key(key);
@@ -93,6 +86,10 @@ static const char* ht_set_entry(ht_entry* entries, size_t capacity,
     while (entries[index].key != NULL) {
         if (strcmp(key, entries[index].key) == 0) {
             // Found key (it already exists), update value.
+            fprintf(stderr, "-> %s is already in hash map, overrided it!\n", key);
+            free((char *) entries[index].key); // key is strdup upon insert, free old key now
+            entries[index].key = strdup(key);  // strdup the new key
+            table->destroy(entries[index].value); // trash old mapped value with, user callback
             entries[index].value = value;
             return entries[index].key;
         }
@@ -134,7 +131,7 @@ static bool ht_expand(ht* table) {
     for (size_t i = 0; i < table->capacity; i++) {
         ht_entry entry = table->entries[i];
         if (entry.key != NULL) {
-            ht_set_entry(new_entries, new_capacity, entry.key,
+            _ht_set(table, new_entries, new_capacity, entry.key,
                          entry.value, NULL);
         }
     }
@@ -148,9 +145,7 @@ static bool ht_expand(ht* table) {
 
 const char* ht_set(ht* table, const char* key, void* value) {
     assert(value != NULL);
-    if (value == NULL) {
-        return NULL;
-    }
+    if (value == NULL)  return NULL; 
 
     // If length will exceed half of current capacity, expand it.
     if (table->length >= table->capacity / 2) {
@@ -160,7 +155,7 @@ const char* ht_set(ht* table, const char* key, void* value) {
     }
 
     // Set entry and update length.
-    return ht_set_entry(table->entries, table->capacity, key, value,
+    return _ht_set(table, table->entries, table->capacity, key, value,
                         &table->length);
 }
 
@@ -177,7 +172,7 @@ hti ht_iterator(ht* table) {
 
 bool ht_next(hti* it) {
     // Loop till we've hit end of entries array.
-    ht* table = it->_table;
+    const ht* table = it->_table;
     while (it->_index < table->capacity) {
         size_t i = it->_index;
         it->_index++;
@@ -190,4 +185,14 @@ bool ht_next(hti* it) {
         }
     }
     return false;
+}
+
+void ht_print(ht *m, char* (*ts)(void *data)) {
+    hti it = ht_iterator(m);
+    while(ht_next(&it)) 
+    {
+        if (it.value != NULL) {
+            printf("[%lu] -> %s -> %s\n", it._index, it.key, ts(it.value));
+        }
+    }
 }

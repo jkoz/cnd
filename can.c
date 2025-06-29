@@ -42,12 +42,13 @@ void can_decode_id(can *c) {
 
 void can_pprint(const can *self)
 {
-    /* printf("%x ", self->can_id); */
+    // print can_id & data
+    printf("%08x ", self->can_id);
     for (int i = 0; i < self->size; i++) {
         printf("%02X", self->can_data[i]);
     }
     /* printf("\nPriority: %u\nPGN: %u\nDA: %u\nSA: %u\n\n", self->pri, self->pgn, self->da, self->sa); */
-    printf("Priority: %u PGN: %u DA: %u SA: %u\n", self->pri, self->pgn, self->da, self->sa);
+    printf(" Priority: %u PGN: %u DA: %u SA: %u\n", self->pri, self->pgn, self->da, self->sa);
 }
 
 void can_setid(can *self, const unsigned int canid)

@@ -22,11 +22,14 @@ all: ${PROG}
 ${PROG}: ${OBJ}
 	${CC} ${CFLAGS} ${OBJ} -o $@  
 
+# @ is used to silent the output
 clean:
-	rm -f ${PROG} ${OBJ}
+	@rm -f ${PROG} ${OBJ}
 
+# @ is used to silent the output
 install: all
-	cp -f ${PROG} ${PREFIX}/bin
-	chmod 755 ${PREFIX}/bin/${PROG}
+	@cp -f ${PROG} ${PREFIX}/bin
+	@chmod 755 ${PREFIX}/bin/${PROG}
 
 .PHONY: all clean install uninstall
+
