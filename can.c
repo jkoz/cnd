@@ -3,9 +3,9 @@
 #include <string.h>
 #include <stdint.h>
 #include <ctype.h>
+#include "ht.h"
 #include "can.h"
 
-#define BUFSIZ 1024
 #define PRIORITY_MASK 0x1C000000 // 0001 1100 0000 0000 0000 0000 0000 0000
 #define EDP_MASK 0x02000000      // 0000 0010 0000 0000 0000 0000 0000 0000
 #define DP_MASK 0x01000000       // 0000 0001 0000 0000 0000 0000 0000 0000
@@ -40,15 +40,30 @@ void can_decode_id(can *c) {
 	}
 }
 
-void can_pprint(const can *self)
+void can_pprint(const can *self, ht *sa_map)
 {
+
+    printf("pri=%u pgn=%u da=%u ", self->pri, self->pgn, self->da);
+
+    int l = snprintf(NULL, 0, "%d", self->sa);
+    char sa[l+1];
+    snprintf(sa, l + 1, "%d", self->sa);
+
+    void *v = ht_get(sa_map, sa);
+    if (v == NULL) { // Source address is not found in DA file, set to Reserved
+        printf("sa=%d %s ", self->sa, "Reserved");
+    } else {
+        printf("sa=%d %s ", self->sa, (char *) v);
+    }
+
     // print can_id & data
+    // <./j1939db/j1939da.csv.2 awk -v OFS=@ --csv '$5 ~ "PGN" || ($5 == 61449) {print NR, $5, $6, $19, $18, $22, $23, $20 }'  | column -ts @
     printf("%08x ", self->can_id);
     for (int i = 0; i < self->size; i++) {
         printf("%02X", self->can_data[i]);
     }
-    /* printf("\nPriority: %u\nPGN: %u\nDA: %u\nSA: %u\n\n", self->pri, self->pgn, self->da, self->sa); */
-    printf(" Priority: %u PGN: %u DA: %u SA: %u\n", self->pri, self->pgn, self->da, self->sa);
+
+    printf("\n");
 }
 
 void can_setid(can *self, const unsigned int canid)

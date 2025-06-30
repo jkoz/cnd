@@ -1,6 +1,8 @@
 #ifndef _CAN_H
 #define _CAN_H
 
+#include "ht.h"
+
 /*
  
     PDU: Protocol Data Unit
@@ -66,6 +68,6 @@ void can_adddata(can *self, const char byte);
 /*  
  * 
  */ 
-void can_pprint(const can *self);
+void can_pprint(const can *self, ht* m);
 
 #endif

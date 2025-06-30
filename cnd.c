@@ -46,21 +46,15 @@ int main(void) {
 	FILE *f1 = fopen(DA_SA_HIGHWAY, "r");
     can_loadda(f1, m, 3, 76);
 
-    /* ht_print(m, ts); */
 
     char buffer[BUFSIZ];
     char *line, *token;
-
     char *delims = " ";
 
     while (fgets(buffer, BUFSIZ, stdin) != NULL) {
-        char *rec = malloc(strlen(buffer));
-        strncpy(rec, buffer, strlen(buffer));
-
-        for (line = rec; *line == ' '; line++); // skip leading space
+        for (line = buffer; *line == ' '; line++); // skip leading space
 
         if (isdigit(*line)) { // record start with time digit
-
             can c = can_init();
             token = strtok(line, delims);
             for(int i = 0; token != NULL ; i++) {
@@ -77,20 +71,8 @@ int main(void) {
                 token = strtok(NULL, delims);
             }
             can_decode_id(&c);
-
-            int l = snprintf(NULL, 0, "%d", c.sa);
-            char sa[l+1];
-            snprintf(sa, l + 1, "%d", c.sa);
-            
-            void *v = ht_get(m, sa);
-            if (v == NULL) { // Source address is not found in DA file, set to Reserved
-                printf("%d %s\n", c.sa, "Reserved");
-            } else {
-                printf("%d %s\n", c.sa, (char *) v);
-            }
-            /* can_pprint(&c); */
+            can_pprint(&c, m);
         }
-        free(rec);
     }
 	
 	ht_destroy(m);
