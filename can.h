@@ -1,7 +1,7 @@
 #ifndef _CAN_H
 #define _CAN_H
 
-#include "ht.h"
+#include "hashtable.h"
 
 /*
  
@@ -66,8 +66,8 @@ void can_setid(can *self, const unsigned int canid);
 void can_adddata(can *self, const char byte);
 
 /*  
- * 
+ * sam - Source Address Map
  */ 
-void can_pprint(const can *self, ht* m);
+void can_print(const can *self, hashtable *sam);
 
 #endif

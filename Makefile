@@ -5,9 +5,14 @@
 
 
 CC = cc
-CFLAGS = -Wall -Wextra -g -std=c11 -pedantic 
 
-SRC = cnd.c ht.c csv.c guards.c can.c
+INCS = -I/usr/local/include
+LIBS = -L/usr/local/lib -lcsv
+
+CFLAGS = ${INCS} -Wall -Wextra -g -std=c11 -pedantic
+LDFLAGS = ${LIBS}
+
+SRC = cnd.c hashtable.c can.c 
 OBJ = ${SRC:.c=.o}
 
 PREFIX = ${HOME}
@@ -20,7 +25,7 @@ all: ${PROG}
 
 # $@ is the name of the target being generated: cnd
 ${PROG}: ${OBJ}
-	${CC} ${CFLAGS} ${OBJ} -o $@  
+	${CC} ${LDFLAGS} ${OBJ} -o $@  
 
 # @ is used to silent the output
 clean:

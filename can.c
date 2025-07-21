@@ -3,7 +3,6 @@
 #include <string.h>
 #include <stdint.h>
 #include <ctype.h>
-#include "ht.h"
 #include "can.h"
 
 #define PRIORITY_MASK 0x1C000000 // 0001 1100 0000 0000 0000 0000 0000 0000
@@ -40,20 +39,20 @@ void can_decode_id(can *c) {
 	}
 }
 
-void can_pprint(const can *self, ht *sa_map)
+void can_print(const can *self, hashtable *sam)
 {
 
     printf("pri=%u pgn=%u da=%u ", self->pri, self->pgn, self->da);
 
-    int l = snprintf(NULL, 0, "%d", self->sa);
-    char sa[l+1];
-    snprintf(sa, l + 1, "%d", self->sa);
+    int l = snprintf(NULL, 0, "%d", self->sa) + 1;
+    char sa[l];
+    snprintf(sa, l, "%d", self->sa);
 
-    void *v = ht_get(sa_map, sa);
+    void *v = hashtable_get(sam, sa);
     if (v == NULL) { // Source address is not found in DA file, set to Reserved
-        printf("sa=%d %s ", self->sa, "Reserved");
+        printf("%d %s ", self->sa, "Reserved");
     } else {
-        printf("sa=%d %s ", self->sa, (char *) v);
+        printf("%d %s ", self->sa, (char*) hashtable_get(((hashtable *) v), "Name"));
     }
 
     // print can_id & data
